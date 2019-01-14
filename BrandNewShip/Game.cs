@@ -19,10 +19,11 @@ namespace BrandNewShip
         private static BaseObject[] _objs;
         private static List<Bullet> _bullets = new List<Bullet>();
         private static List<Asteroid> Asteroids = new List<Asteroid>();
+        private static List<Asteroid> AsteroidsNew = new List<Asteroid>();
         private static Ship _ship = new Ship(new Point(10, 400), new Point(5, 5), new Size(10, 10));
         private static Timer _timer = new Timer { Interval = 100 };
         private static HealthPack[] _healthPack;
-        private static int n = 1;
+        private static int n = 3;
 
         public static int Width
         {
@@ -51,7 +52,7 @@ namespace BrandNewShip
         
         private static void Form_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.ControlKey) _bullets.Add(new Bullet(new Point(_ship.rect.X + 10, _ship.rect.Y + 4), new Point(15, 0), new Size(4, 1)));
+            if (e.KeyCode == Keys.ControlKey) _bullets.Add(new Bullet(new Point(_ship.rect.X + 10, _ship.rect.Y + 4), new Point(25, 0), new Size(4, 1)));
             if (e.KeyCode == Keys.Up) _ship.Up();
             if (e.KeyCode == Keys.Down) _ship.Down();
         }
@@ -103,6 +104,10 @@ namespace BrandNewShip
             {
                 hp?.Draw();
             }
+            if (Asteroids.Count == 0)
+            {
+                foreach (var a in AsteroidsNew) a?.Draw();
+            }
             foreach (var b in _bullets) b?.Draw();
             _ship?.Draw();
             if (_ship != null)
@@ -115,27 +120,32 @@ namespace BrandNewShip
         {
             foreach (BaseObject obj in _objs) obj.Update();
             foreach(var b in _bullets) b?.Update();
-            foreach (var a in Asteroids) a?.Update();
-            for (var i = 0; i < Asteroids.Count; i++)
+            foreach (var a in Asteroids) a?.Update(); 
+            if (Asteroids.Count == 0)
             {
-                for (var j = 0; j < _bullets.Count; j++)
+                foreach (var a in AsteroidsNew) a?.Update();
+            }
+            for (var i = _bullets.Count - 1; i >= 0; i--)
+            {
+                for (var j = Asteroids.Count - 1; j >= 0; j--)
                 {
-                    if (_bullets[j] != null && _bullets[j].Collision(Asteroids[i]))
+                    if (_bullets.Count != 0 && _bullets[i].Collision(Asteroids[j]))
                     {
                         System.Media.SystemSounds.Hand.Play();
                         _ship.IncScore(5);
-                        Asteroids.RemoveAt(i);
-                        _bullets.RemoveAt(j);
+                        AsteroidsNew.Add(Asteroids[j]);
+                        Asteroids.Remove(Asteroids[j]);
+                        _bullets.Remove(_bullets[i]);
                         continue;
-                    }                    
-                }
-                if (Asteroids[i] == null || !_ship.Collision(Asteroids[i])) continue;
-                {
-                    _ship.EnergyLow(rnd.Next(1, 10));
-                    System.Media.SystemSounds.Asterisk.Play();
-                    if (_ship.Energy <= 0) _ship.Die();
-                }
-            }                     
+                    }
+                    if (Asteroids.Count != 0 && _ship.Collision(Asteroids[j]))
+                    {
+                        _ship.EnergyLow(rnd.Next(1, 10));
+                        System.Media.SystemSounds.Asterisk.Play();
+                        if (_ship.Energy <= 0) _ship.Die();
+                    }
+                }      
+            }
             for (var i = 0; i < _healthPack.Length; i++)
             {
                 _healthPack[i].Update();                
@@ -159,8 +169,7 @@ namespace BrandNewShip
         //таймер изменения состояний
         public static void Timer_Tick(object sender, EventArgs e)
         {        
-            DrawForm();
-            LoadAsteroids(n);            
+            DrawForm();           
             Draw();
             Update();   
             buffer.Render();
