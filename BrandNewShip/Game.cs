@@ -20,10 +20,12 @@ namespace BrandNewShip
         private static List<Bullet> _bullets = new List<Bullet>();
         private static List<Asteroid> Asteroids = new List<Asteroid>();
         private static List<Asteroid> AsteroidsNew = new List<Asteroid>();
+        private static List<Asteroid> AsteroidsNew2 = new List<Asteroid>();
+        private static List<Asteroid> AsteroidsNew3 = new List<Asteroid>();
         private static Ship _ship = new Ship(new Point(10, 400), new Point(5, 5), new Size(10, 10));
         private static Timer _timer = new Timer { Interval = 100 };
         private static HealthPack[] _healthPack;
-        private static int n = 3;
+        private static int n = 100;
 
         public static int Width
         {
@@ -38,13 +40,14 @@ namespace BrandNewShip
         }
 
         public static void Init(Form form)
-        {            
+        {
             context = BufferedGraphicsManager.Current;
-            g = form.CreateGraphics();            
+            g = form.CreateGraphics();
+            Load();
             Width = form.ClientSize.Width;
             Height = form.ClientSize.Height;
-            if (Width > 984 || Height > 962 || Width < 132 || Height < 38) throw new ArgumentOutOfRangeException("Размер превышен");
-            form.KeyDown += Form_KeyDown;                                   
+            if (Width > 984 || Height > 962 || Width < 132 || Height < 38) throw new ArgumentOutOfRangeException("Размер превышен");            
+            form.KeyDown += Form_KeyDown;            
             _timer.Start();
             _timer.Tick += Timer_Tick;
             Ship.MessageDie += Finish;    
@@ -55,59 +58,99 @@ namespace BrandNewShip
             if (e.KeyCode == Keys.ControlKey) _bullets.Add(new Bullet(new Point(_ship.rect.X + 10, _ship.rect.Y + 4), new Point(25, 0), new Size(4, 1)));
             if (e.KeyCode == Keys.Up) _ship.Up();
             if (e.KeyCode == Keys.Down) _ship.Down();
+            if (e.KeyCode == Keys.Escape) Application.Exit();
         }
-
-        //рисуем форму и закрашиваем её черным
-        public static void DrawForm()
-        {
-            buffer = context.Allocate(g, new Rectangle(0, 0, Width, Height));
-            buffer.Graphics.Clear(Color.Black);
-        }
-
-        //загружаем астероиды, звезды и пулю
+        
         public static void Load()
-        {            
-            _objs = new BaseObject[200];     
+        {
+            _objs = new BaseObject[200];
             _healthPack = new HealthPack[10];
             for (var i = 0; i < _objs.Length; i++)
             {
                 int r = rnd.Next(5, 50);
-                _objs[i] = new Star(new Point(70,70), new Point(-r, r), new Size(3, 3));                
-                _objs[i] = new Star(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 1000)), new Point(-r, r), new Size(2, 2));                
+                _objs[i] = new Star(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 1000)), new Point(-r, r), new Size(2, 2));
             }
-            LoadAsteroids(n);           
+            LoadAsteroids(Asteroids);
+            LoadAsteroids(AsteroidsNew);
+            LoadAsteroids(AsteroidsNew2);
+            LoadAsteroids(AsteroidsNew3);          
             for (var i = 0; i < _healthPack.Length; i++)
             {
                 _healthPack[i] = new HealthPack(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Width, 1000)), new Point(-3, 0), new Size(10, 10));
-            }
+            }                     
         }
 
-        public static void LoadAsteroids(int m)
+
+        public static void LoadAsteroids(List<Asteroid> Asteroids)
         {
-            for (var i = 0; i < m; i++)
+            for (var i = 0; i < n; i++)
             {
-                int r = rnd.Next(5, 50);
-                Asteroids.Add(new Asteroid(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 1000)), new Point(-r / 5, r), new Size(r, r)));
-            }          
+                int r = rnd.Next(20, 50);
+                Asteroids.Add(new Asteroid(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 800)), new Point(-r / 5, r), new Size(r, r)));
+            }
+            n++;
+        }
+
+        public static void UpdateAsteroids(List<Asteroid> Asteroids)
+        {
+            foreach (var a in Asteroids)
+            {
+                a?.Update();
+                if (_ship.Collision(a))
+                {
+                    _ship.EnergyLow(rnd.Next(1, 10));
+                    System.Media.SystemSounds.Asterisk.Play();
+                    if (_ship.Energy <= 0) _ship.Die();
+                }
+            }
+            foreach (var a in _bullets)
+            {
+                a.Update();
+                for (var j = Asteroids.Count - 1; j >= 0; j--)
+                {
+                    if (a.Collision(Asteroids[j]))
+                    {
+                        int r = rnd.Next(5, 50);
+                        System.Media.SystemSounds.Hand.Play();
+                        _ship.IncScore(5);                        
+                        Asteroids.RemoveAt(j);
+                        j--;
+                        continue;
+                    }
+                }
+            }
         }
 
         public static void Draw()
         {
+            buffer = context.Allocate(g, new Rectangle(0, 0, Width, Height));
             buffer.Graphics.Clear(Color.Black);
             foreach (BaseObject obj in _objs)
-                obj.Draw();
+                obj.Draw();            
             foreach (Asteroid a in Asteroids)
             {
                 a?.Draw();
             }
+           if (Asteroids.Count == 0)
+                foreach (Asteroid a in AsteroidsNew)
+                {
+                    a?.Draw();
+                }
+            if (AsteroidsNew.Count == 0)
+                foreach (Asteroid a in AsteroidsNew2)
+                {
+                    a?.Draw();
+                }
+            if (AsteroidsNew2.Count == 0)
+                foreach (Asteroid a in AsteroidsNew3)
+                {
+                    a?.Draw();
+                }
+            
             foreach (HealthPack hp in _healthPack)
             {
                 hp?.Draw();
-            }
-            if (Asteroids.Count == 0)
-            {
-                foreach (var a in AsteroidsNew) a?.Draw();
-            }
+            }                      
             foreach (var b in _bullets) b?.Draw();
             _ship?.Draw();
             if (_ship != null)
@@ -119,33 +162,14 @@ namespace BrandNewShip
         public static void Update()
         {
             foreach (BaseObject obj in _objs) obj.Update();
-            foreach(var b in _bullets) b?.Update();
-            foreach (var a in Asteroids) a?.Update(); 
+            UpdateAsteroids(Asteroids);
             if (Asteroids.Count == 0)
-            {
-                foreach (var a in AsteroidsNew) a?.Update();
-            }
-            for (var i = _bullets.Count - 1; i >= 0; i--)
-            {
-                for (var j = Asteroids.Count - 1; j >= 0; j--)
-                {
-                    if (_bullets.Count != 0 && _bullets[i].Collision(Asteroids[j]))
-                    {
-                        System.Media.SystemSounds.Hand.Play();
-                        _ship.IncScore(5);
-                        AsteroidsNew.Add(Asteroids[j]);
-                        Asteroids.Remove(Asteroids[j]);
-                        _bullets.Remove(_bullets[i]);
-                        continue;
-                    }
-                    if (Asteroids.Count != 0 && _ship.Collision(Asteroids[j]))
-                    {
-                        _ship.EnergyLow(rnd.Next(1, 10));
-                        System.Media.SystemSounds.Asterisk.Play();
-                        if (_ship.Energy <= 0) _ship.Die();
-                    }
-                }      
-            }
+            UpdateAsteroids(AsteroidsNew);
+            if (AsteroidsNew.Count == 0)
+                UpdateAsteroids(AsteroidsNew2);
+            if (AsteroidsNew2.Count == 0)
+                UpdateAsteroids(AsteroidsNew3);               
+            
             for (var i = 0; i < _healthPack.Length; i++)
             {
                 _healthPack[i].Update();                
@@ -156,7 +180,7 @@ namespace BrandNewShip
                     if (_ship.Energy > 100) _ship.FullEnergy();               
                 }
             }            
-          }
+        }
 
         public static void Finish()
         {
@@ -168,8 +192,7 @@ namespace BrandNewShip
 
         //таймер изменения состояний
         public static void Timer_Tick(object sender, EventArgs e)
-        {        
-            DrawForm();           
+        {
             Draw();
             Update();   
             buffer.Render();
