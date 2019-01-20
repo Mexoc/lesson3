@@ -79,8 +79,7 @@ namespace BrandNewShip
                 _healthPack[i] = new HealthPack(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Width, 1000)), new Point(-3, 0), new Size(10, 10));
             }                     
         }
-
-
+        
         public static void LoadAsteroids(List<Asteroid> Asteroids)
         {
             for (var i = 0; i < n; i++)
@@ -99,6 +98,7 @@ namespace BrandNewShip
                 if (_ship.Collision(a))
                 {
                     _ship.EnergyLow(rnd.Next(1, 10));
+                    Console.WriteLine("Столкновение с астероидом");
                     System.Media.SystemSounds.Asterisk.Play();
                     if (_ship.Energy <= 0) _ship.Die();
                 }
@@ -110,6 +110,7 @@ namespace BrandNewShip
                 {
                     if (a.Collision(Asteroids[j]))
                     {
+                        Console.WriteLine("Астероид сбит");
                         int r = rnd.Next(5, 50);
                         System.Media.SystemSounds.Hand.Play();
                         _ship.IncScore(5);                        
@@ -185,11 +186,11 @@ namespace BrandNewShip
         public static void Finish()
         {
             _timer.Stop();
+            Console.WriteLine("Корабль уничтожен");
             buffer.Graphics.DrawString("Game Over", new Font(FontFamily.GenericSansSerif, 60, FontStyle.Bold), Brushes.White, 200, 100);
             buffer.Render();
         }
         
-
         //таймер изменения состояний
         public static void Timer_Tick(object sender, EventArgs e)
         {
