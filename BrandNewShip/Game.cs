@@ -85,13 +85,46 @@ namespace BrandNewShip
             for (var i = 0; i < n; i++)
             {
                 int r = rnd.Next(20, 50);
-                Asteroids.Add(new Asteroid(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 800)), new Point(-r / 5, r), new Size(r, r)));
+                Asteroids.Add(new Asteroid(new Point(rnd.Next(Game.Width, 1000), rnd.Next(Game.Height, 800)), new Point(- n / 5, n/2), new Size(r, r)));
             }
             n++;
         }
 
+        //public static void UpdateAsteroids(List<Asteroid> Asteroids)
+        //{
+        //    foreach (var a in Asteroids)
+        //    {
+        //        a?.Update();
+        //        if (_ship.Collision(a))
+        //        {
+        //            _ship.EnergyLow(rnd.Next(1, 10));
+        //            Console.WriteLine("Столкновение с астероидом");
+        //            System.Media.SystemSounds.Asterisk.Play();
+        //            if (_ship.Energy <= 0) _ship.Die();
+        //        }
+        //    }
+        //    foreach (var a in _bullets)
+        //    {
+        //        a.Update();
+        //        for (var j = Asteroids.Count - 1; j >= 0; j--)
+        //        {
+        //            if (a.Collision(Asteroids[j]))
+        //            {
+        //                Console.WriteLine("Астероид сбит");
+        //                int r = rnd.Next(5, 50);
+        //                System.Media.SystemSounds.Hand.Play();
+        //                _ship.IncScore(5);                        
+        //                Asteroids.RemoveAt(j);
+        //                j--;
+        //                continue;
+        //            }
+        //        }
+        //    }
+        //}
+
         public static void UpdateAsteroids(List<Asteroid> Asteroids)
         {
+            bool flag;
             foreach (var a in Asteroids)
             {
                 a?.Update();
@@ -103,20 +136,23 @@ namespace BrandNewShip
                     if (_ship.Energy <= 0) _ship.Die();
                 }
             }
-            foreach (var a in _bullets)
-            {
-                a.Update();
+            for (var i = _bullets.Count - 1; i >= 0; i--)
+            {                
+                _bullets[i].Update();
                 for (var j = Asteroids.Count - 1; j >= 0; j--)
                 {
-                    if (a.Collision(Asteroids[j]))
+                    flag = false;
+                    if (_bullets[i].Collision(Asteroids[j]))
                     {
+                        flag = true;
                         Console.WriteLine("Астероид сбит");
                         int r = rnd.Next(5, 50);
                         System.Media.SystemSounds.Hand.Play();
-                        _ship.IncScore(5);                        
+                        _ship.IncScore(5);
                         Asteroids.RemoveAt(j);
+                        _bullets.RemoveAt(i);
                         j--;
-                        continue;
+                        break;
                     }
                 }
             }
